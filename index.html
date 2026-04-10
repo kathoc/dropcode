@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dropcode</title>
+  <meta name="description" content="Dropcode turns text into a QR code you can scan and also lets you scan QR text with your camera.">
+  <style>
+    :root {
+      --bg: #f3efe5;
+      --surface: rgba(255, 250, 240, 0.92);
+      --surface-strong: #fffdf8;
+      --text: #1f2933;
+      --muted: #5b6570;
+      --border: rgba(31, 41, 51, 0.12);
+      --accent: #c45c2f;
+      --accent-dark: #8f3f1f;
+      --success: #2e7d32;
+      --danger: #b23a48;
+      --shadow: 0 24px 60px rgba(56, 35, 15, 0.12);
+      --radius: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(196, 92, 47, 0.22), transparent 28%),
+        radial-gradient(circle at top right, rgba(41, 98, 255, 0.12), transparent 24%),
+        linear-gradient(180deg, #f8f4ea 0%, #efe7d5 100%);
+      min-height: 100vh;
+    }
+
+    .shell {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
+
+    .hero {
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(31, 41, 51, 0.08);
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent-dark);
+    }
+
+    h1 {
+      margin: 18px 0 10px;
+      font-size: clamp(2.5rem, 5vw, 4.8rem);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      max-width: 760px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1.3rem;
+    }
+
+    .card p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .counter {
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      border: 1px solid rgba(31, 41, 51, 0.12);
+      border-radius: 18px;
+      resize: vertical;
+      padding: 16px 18px;
+      font: inherit;
+      color: var(--text);
+      background: var(--surface-strong);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: rgba(196, 92, 47, 0.6);
+      box-shadow: 0 0 0 4px rgba(196, 92, 47, 0.12);
+    }
+
+    .qr-stage {
+      display: grid;
+      place-items: center;
+      min-height: 380px;
+      border-radius: 24px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.98), rgba(250,246,238,0.94));
+      border: 1px solid rgba(31, 41, 51, 0.1);
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    #qrcode {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      min-height: 300px;
+    }
+
+    #qrcode canvas,
+    #qrcode img {
+      width: min(100%, 320px) !important;
+      height: auto !important;
+      aspect-ratio: 1 / 1;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 20px 40px rgba(25, 25, 25, 0.12);
+      padding: 14px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 18px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(143, 63, 31, 0.18);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .secondary {
+      background: rgba(31, 41, 51, 0.08);
+      color: var(--text);
+    }
+
+    .hint {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .scanner-wrap {
+      display: grid;
+      gap: 16px;
+    }
+
+    .video-shell {
+      position: relative;
+      overflow: hidden;
+      border-radius: 22px;
+      background: #0e141b;
+      aspect-ratio: 16 / 10;
+      border: 1px solid rgba(31, 41, 51, 0.12);
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #0e141b;
+    }
+
+    .video-shell::after {
+      content: "";
+      position: absolute;
+      inset: 12%;
+      border: 2px solid rgba(255,255,255,0.78);
+      border-radius: 24px;
+      box-shadow: 0 0 0 999px rgba(0,0,0,0.12);
+      pointer-events: none;
+    }
+
+    .status {
+      min-height: 24px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .status.error {
+      color: var(--danger);
+    }
+
+    .status.success {
+      color: var(--success);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    @media (max-width: 860px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .shell {
+        width: min(100% - 20px, 720px);
+        padding-top: 20px;
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      textarea {
+        min-height: 180px;
+      }
+
+      .qr-stage {
+        min-height: 320px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <span class="eyebrow">Dropcode</span>
+      <h1>Text AirDrop, no app required.</h1>
+      <p>Type or paste text, flash it as a QR code, and let another phone read it instantly with the default camera. On the flip side, Dropcode can also scan QR text straight from your device camera with no backend, no accounts, and no tracking.</p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Send Text</h2>
+        <p>Anything you enter below is encoded directly into the QR code in real time, so another device can scan it and view the text immediately.</p>
+        <label for="textInput">
+          <span>Text to share</span>
+          <span class="counter" id="inputCount">0 characters</span>
+        </label>
+        <textarea id="textInput" placeholder="Paste a note, URL, Wi-Fi password, code snippet, or any text you want to send.">Hello from Dropcode.</textarea>
+        <div class="actions">
+          <button id="downloadBtn" class="primary" type="button">Download QR as PNG</button>
+          <button id="clearBtn" class="secondary" type="button">Clear text</button>
+        </div>
+        <p class="hint">Static only: works on GitHub Pages, stores nothing, and uses your browser plus two CDN scripts.</p>
+      </article>
+
+      <article class="card">
+        <h2>Live QR</h2>
+        <p>The QR code stays large for comfortable mobile scanning. Empty input shows a friendly prompt instead of a blank panel.</p>
+        <div class="qr-stage">
+          <div id="qrcode" aria-live="polite"></div>
+        </div>
+        <p class="hint" id="qrHint">Scan this with a phone camera and the text will appear directly in the system QR preview.</p>
+      </article>
+
+      <article class="card">
+        <h2>Scan QR</h2>
+        <p>Use your camera to decode QR text here. On phones, Dropcode asks for the rear camera when possible and stops scanning automatically after a successful read.</p>
+        <div class="scanner-wrap" id="scannerWrap">
+          <div class="video-shell" id="videoShell">
+            <video id="scannerVideo" playsinline muted></video>
+          </div>
+          <div class="actions">
+            <button id="startScanBtn" class="primary" type="button">Start camera scan</button>
+            <button id="stopScanBtn" class="secondary" type="button" disabled>Stop scan</button>
+          </div>
+        </div>
+        <p class="status" id="scanStatus">Camera idle.</p>
+        <label for="scanResult">
+          <span>Scanned text</span>
+          <span class="counter" id="scanCount">0 characters</span>
+        </label>
+        <textarea id="scanResult" placeholder="Decoded text will appear here." spellcheck="false"></textarea>
+      </article>
+
+      <article class="card">
+        <h2>Privacy</h2>
+        <p>Dropcode is a tiny front-end-only utility. It does not upload text, write cookies, use analytics, or depend on any server logic.</p>
+        <p class="hint">If the browser blocks camera access or your device has no available camera, the scan controls hide and a clear message explains why.</p>
+      </article>
+    </section>
+
+    <footer>No backend. No tracking. Just text in and text out.</footer>
+  </main>
+
+  <canvas id="scanCanvas" class="hidden"></canvas>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script>
+    const textInput = document.getElementById('textInput');
+    const inputCount = document.getElementById('inputCount');
+    const qrcodeContainer = document.getElementById('qrcode');
+    const qrHint = document.getElementById('qrHint');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    const startScanBtn = document.getElementById('startScanBtn');
+    const stopScanBtn = document.getElementById('stopScanBtn');
+    const scannerWrap = document.getElementById('scannerWrap');
+    const videoShell = document.getElementById('videoShell');
+    const scannerVideo = document.getElementById('scannerVideo');
+    const scanCanvas = document.getElementById('scanCanvas');
+    const scanResult = document.getElementById('scanResult');
+    const scanStatus = document.getElementById('scanStatus');
+    const scanCount = document.getElementById('scanCount');
+
+    let qrCode;
+    let scanAnimationFrame = null;
+    let scanStream = null;
+    let scannerActive = false;
+
+    function updateCounter(element, value) {
+      const size = value.length;
+      element.textContent = `${size} character${size === 1 ? '' : 's'}`;
+    }
+
+    function renderEmptyState() {
+      qrcodeContainer.innerHTML = '<p style="margin:0; text-align:center; color:#5b6570; max-width:280px; line-height:1.6;">Enter some text to generate a QR code that another device can scan instantly.</p>';
+      downloadBtn.disabled = true;
+      qrHint.textContent = 'Enter text to generate a scannable QR code.';
+    }
+
+    function renderQr(value) {
+      updateCounter(inputCount, value);
+
+      if (!value.trim()) {
+        renderEmptyState();
+        return;
+      }
+
+      qrcodeContainer.innerHTML = '';
+      qrCode = new QRCode(qrcodeContainer, {
+        text: value,
+        width: 512,
+        height: 512,
+        colorDark: '#111111',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+
+      downloadBtn.disabled = false;
+      qrHint.textContent = 'Scan this with a phone camera and the text will appear directly in the system QR preview.';
+    }
+
+    function getQrCanvas() {
+      const canvas = qrcodeContainer.querySelector('canvas');
+      if (canvas) return canvas;
+
+      const img = qrcodeContainer.querySelector('img');
+      if (!img) return null;
+
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = img.naturalWidth || 512;
+      tempCanvas.height = img.naturalHeight || 512;
+      const ctx = tempCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+      ctx.drawImage(img, 0, 0);
+      return tempCanvas;
+    }
+
+    function downloadQr() {
+      const canvas = getQrCanvas();
+      if (!canvas) return;
+
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = 'dropcode-qr.png';
+      link.click();
+    }
+
+    function setScanStatus(message, kind = '') {
+      scanStatus.textContent = message;
+      scanStatus.className = `status${kind ? ` ${kind}` : ''}`;
+    }
+
+    function updateScanText(value) {
+      scanResult.value = value;
+      updateCounter(scanCount, value);
+    }
+
+    function stopScanner(message = 'Scanner stopped.', kind = '') {
+      scannerActive = false;
+      stopScanBtn.disabled = true;
+      startScanBtn.disabled = false;
+
+      if (scanAnimationFrame) {
+        cancelAnimationFrame(scanAnimationFrame);
+        scanAnimationFrame = null;
+      }
+
+      if (scanStream) {
+        scanStream.getTracks().forEach((track) => track.stop());
+        scanStream = null;
+      }
+
+      scannerVideo.srcObject = null;
+      if (message) setScanStatus(message, kind);
+    }
+
+    function hideScanner(message) {
+      stopScanner('', '');
+      scannerWrap.classList.add('hidden');
+      videoShell.classList.add('hidden');
+      setScanStatus(message, 'error');
+    }
+
+    function scanLoop() {
+      if (!scannerActive || !scannerVideo.videoWidth || !scannerVideo.videoHeight) {
+        scanAnimationFrame = requestAnimationFrame(scanLoop);
+        return;
+      }
+
+      const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
+      scanCanvas.width = scannerVideo.videoWidth;
+      scanCanvas.height = scannerVideo.videoHeight;
+      ctx.drawImage(scannerVideo, 0, 0, scanCanvas.width, scanCanvas.height);
+      const imageData = ctx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+
+      if (code && code.data) {
+        updateScanText(code.data);
+        stopScanner('QR detected. Camera stopped automatically.', 'success');
+        return;
+      }
+
+      scanAnimationFrame = requestAnimationFrame(scanLoop);
+    }
+
+    async function startScanner() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        hideScanner('This browser does not support camera scanning.');
+        return;
+      }
+
+      startScanBtn.disabled = true;
+      setScanStatus('Requesting camera access...');
+
+      try {
+        const constraints = {
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        };
+
+        scanStream = await navigator.mediaDevices.getUserMedia(constraints);
+        scannerVideo.srcObject = scanStream;
+        await scannerVideo.play();
+        scannerActive = true;
+        stopScanBtn.disabled = false;
+        setScanStatus('Camera live. Point it at a QR code.');
+        scanLoop();
+      } catch (error) {
+        const denied = error && (error.name === 'NotAllowedError' || error.name === 'SecurityError');
+        const unavailable = error && (error.name === 'NotFoundError' || error.name === 'OverconstrainedError' || error.name === 'NotReadableError');
+
+        if (denied) {
+          hideScanner('Camera permission was denied, so scanning is unavailable in this browser session.');
+          return;
+        }
+
+        if (unavailable) {
+          hideScanner('No usable camera is available on this device right now.');
+          return;
+        }
+
+        hideScanner('The camera could not be started for QR scanning.');
+      }
+    }
+
+    textInput.addEventListener('input', (event) => {
+      renderQr(event.target.value);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      textInput.value = '';
+      renderQr('');
+      textInput.focus();
+    });
+
+    downloadBtn.addEventListener('click', downloadQr);
+    startScanBtn.addEventListener('click', startScanner);
+    stopScanBtn.addEventListener('click', () => stopScanner('Scanner stopped.'));
+
+    window.addEventListener('beforeunload', () => stopScanner(''));
+
+    updateCounter(scanCount, scanResult.value);
+    renderQr(textInput.value);
+  </script>
+</body>
+</html>
