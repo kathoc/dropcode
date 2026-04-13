@@ -1,148 +1,275 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Dropcode</title>
-  <meta name="description" content="Dropcode turns text into a QR code you can scan and also lets you scan QR text with your camera.">
+  <meta name="description" content="Dropcode はテキストを QR コード化し、カメラや画像ファイルから QR テキストを読み取れる静的な単一ページアプリです。">
   <style>
     :root {
-      --bg: #f3efe5;
-      --surface: rgba(255, 250, 240, 0.92);
-      --surface-strong: #fffdf8;
+      --bg: #f4efe6;
+      --surface: rgba(255, 252, 246, 0.9);
+      --surface-strong: #fffdfa;
       --text: #1f2933;
-      --muted: #5b6570;
+      --muted: #5f6873;
       --border: rgba(31, 41, 51, 0.12);
       --accent: #c45c2f;
-      --accent-dark: #8f3f1f;
-      --success: #2e7d32;
-      --danger: #b23a48;
-      --shadow: 0 24px 60px rgba(56, 35, 15, 0.12);
+      --accent-dark: #994421;
+      --success: #2f7d32;
+      --danger: #b53b47;
+      --shadow: 0 18px 48px rgba(63, 41, 18, 0.12);
       --radius: 24px;
+      --screen-pad: clamp(14px, 2vw, 24px);
     }
 
     * {
       box-sizing: border-box;
+      min-width: 0;
     }
 
+    html,
     body {
       margin: 0;
+      height: 100%;
+      overflow: hidden;
       font-family: "Segoe UI", "Helvetica Neue", sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at top left, rgba(196, 92, 47, 0.22), transparent 28%),
-        radial-gradient(circle at top right, rgba(41, 98, 255, 0.12), transparent 24%),
-        linear-gradient(180deg, #f8f4ea 0%, #efe7d5 100%);
-      min-height: 100vh;
+        radial-gradient(circle at top left, rgba(196, 92, 47, 0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(36, 103, 179, 0.12), transparent 26%),
+        linear-gradient(180deg, #f7f2e9 0%, #efe6d4 100%);
     }
 
-    .shell {
-      width: min(1120px, calc(100% - 32px));
-      margin: 0 auto;
-      padding: 32px 0 48px;
+    body.drop-active .drop-overlay {
+      opacity: 1;
+      pointer-events: auto;
     }
 
-    .hero {
-      margin-bottom: 24px;
+    button,
+    textarea,
+    input {
+      font: inherit;
     }
 
-    .eyebrow {
-      display: inline-block;
-      padding: 8px 14px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.72);
-      border: 1px solid rgba(31, 41, 51, 0.08);
-      font-size: 0.78rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--accent-dark);
-    }
-
-    h1 {
-      margin: 18px 0 10px;
-      font-size: clamp(2.5rem, 5vw, 4.8rem);
-      line-height: 0.95;
-      letter-spacing: -0.04em;
-    }
-
-    .hero p {
-      max-width: 760px;
-      margin: 0;
-      color: var(--muted);
-      font-size: 1.05rem;
-      line-height: 1.7;
-    }
-
-    .grid {
+    .app {
+      width: min(1080px, calc(100vw - (var(--screen-pad) * 2)));
+      height: calc(100dvh - (var(--screen-pad) * 2));
+      margin: var(--screen-pad) auto;
+      padding: clamp(14px, 2vw, 24px);
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 22px;
-      align-items: start;
-    }
-
-    .card {
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      gap: clamp(10px, 1.4vw, 18px);
       background: var(--surface);
       backdrop-filter: blur(18px);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: 30px;
       box-shadow: var(--shadow);
-      padding: 24px;
+      overflow: hidden;
     }
 
-    .card h2 {
-      margin: 0 0 8px;
-      font-size: 1.3rem;
+    .topbar {
+      display: grid;
+      gap: 6px;
     }
 
-    .card p {
-      margin: 0 0 18px;
+    .brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: #fff;
+      font-size: 1rem;
+      box-shadow: 0 10px 24px rgba(196, 92, 47, 0.22);
+    }
+
+    .mini-note {
       color: var(--muted);
-      line-height: 1.6;
+      font-size: 0.86rem;
+      text-align: right;
     }
 
-    label {
+    h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 3.2vw, 2.9rem);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .lede {
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(0.9rem, 1.4vw, 1rem);
+      line-height: 1.45;
+      max-width: 64ch;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      background: rgba(31, 41, 51, 0.05);
+      padding: 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(31, 41, 51, 0.07);
+    }
+
+    .tab-button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      padding: 12px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    }
+
+    .tab-button[aria-selected="true"] {
+      background: #fff;
+      color: var(--text);
+      box-shadow: 0 10px 24px rgba(31, 41, 51, 0.08);
+    }
+
+    .panel {
+      display: none;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .panel.active {
+      display: grid;
+    }
+
+    .send-layout {
+      grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+      gap: clamp(12px, 1.5vw, 18px);
+      min-height: 0;
+    }
+
+    .scan-layout {
+      grid-template-columns: minmax(260px, 0.95fr) minmax(0, 1.05fr);
+      gap: clamp(12px, 1.5vw, 18px);
+      min-height: 0;
+    }
+
+    .stack {
+      display: grid;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .card {
+      display: grid;
+      gap: 10px;
+      min-height: 0;
+      padding: clamp(14px, 1.6vw, 20px);
+      border-radius: var(--radius);
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .card-copy {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .label-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
-      font-size: 0.95rem;
+      gap: 12px;
+      font-size: 0.92rem;
       font-weight: 600;
     }
 
-    .counter {
+    .counter,
+    .status {
       color: var(--muted);
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       font-weight: 500;
+    }
+
+    .status {
+      min-height: 1.3em;
+    }
+
+    .status.success {
+      color: var(--success);
+    }
+
+    .status.error {
+      color: var(--danger);
     }
 
     textarea {
       width: 100%;
-      min-height: 220px;
+      min-height: 0;
+      height: 100%;
+      resize: none;
       border: 1px solid rgba(31, 41, 51, 0.12);
       border-radius: 18px;
-      resize: vertical;
-      padding: 16px 18px;
-      font: inherit;
+      padding: 14px 16px;
       color: var(--text);
-      background: var(--surface-strong);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      background: #fff;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
     }
 
-    textarea:focus {
+    textarea:focus,
+    .file-pick:focus-visible,
+    button:focus-visible,
+    .tab-button:focus-visible {
       outline: none;
       border-color: rgba(196, 92, 47, 0.6);
       box-shadow: 0 0 0 4px rgba(196, 92, 47, 0.12);
     }
 
+    .composer {
+      grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    }
+
+    .reader {
+      grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+    }
+
     .qr-stage {
       display: grid;
       place-items: center;
-      min-height: 380px;
+      min-height: 0;
+      height: 100%;
       border-radius: 24px;
-      background:
-        linear-gradient(135deg, rgba(255,255,255,0.98), rgba(250,246,238,0.94));
       border: 1px solid rgba(31, 41, 51, 0.1);
-      padding: 24px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(249, 245, 236, 0.94));
+      padding: 16px;
       overflow: hidden;
     }
 
@@ -150,41 +277,51 @@
       display: grid;
       place-items: center;
       width: 100%;
-      min-height: 300px;
+      height: 100%;
+      min-height: 0;
     }
 
     #qrcode canvas,
     #qrcode img {
-      width: min(100%, 320px) !important;
+      width: min(100%, clamp(240px, 34vw, 420px)) !important;
       height: auto !important;
       aspect-ratio: 1 / 1;
-      background: #fff;
+      padding: 12px;
       border-radius: 18px;
-      box-shadow: 0 20px 40px rgba(25, 25, 25, 0.12);
-      padding: 14px;
+      background: #fff;
+      box-shadow: 0 18px 36px rgba(31, 41, 51, 0.12);
+    }
+
+    .empty-state {
+      margin: 0;
+      max-width: 22ch;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+      font-size: 0.94rem;
     }
 
     .actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 18px;
+      gap: 10px;
     }
 
-    button {
+    button,
+    .file-pick {
       appearance: none;
       border: 0;
       border-radius: 999px;
-      padding: 14px 18px;
-      font: inherit;
+      padding: 12px 16px;
       font-weight: 700;
       cursor: pointer;
-      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+      text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, background 0.18s ease;
     }
 
-    button:hover:not(:disabled) {
+    button:hover:not(:disabled),
+    .file-pick:hover {
       transform: translateY(-1px);
-      box-shadow: 0 10px 22px rgba(143, 63, 31, 0.18);
     }
 
     button:disabled {
@@ -195,31 +332,38 @@
     .primary {
       background: var(--accent);
       color: #fff;
+      box-shadow: 0 10px 24px rgba(196, 92, 47, 0.2);
     }
 
-    .secondary {
+    .secondary,
+    .file-pick {
       background: rgba(31, 41, 51, 0.08);
       color: var(--text);
     }
 
-    .hint {
-      margin-top: 14px;
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-
-    .scanner-wrap {
+    .camera-block {
       display: grid;
-      gap: 16px;
+      gap: 10px;
+      min-height: 0;
     }
 
-    .video-shell {
+    .video-shell,
+    .drop-target {
       position: relative;
       overflow: hidden;
       border-radius: 22px;
-      background: #0e141b;
-      aspect-ratio: 16 / 10;
       border: 1px solid rgba(31, 41, 51, 0.12);
+      background: #0f141b;
+    }
+
+    .video-shell {
+      aspect-ratio: 16 / 10;
+      min-height: 0;
+    }
+
+    .video-shell.hidden,
+    .camera-actions.hidden {
+      display: none !important;
     }
 
     video {
@@ -227,180 +371,335 @@
       height: 100%;
       object-fit: cover;
       display: block;
-      background: #0e141b;
+      background: #0f141b;
     }
 
     .video-shell::after {
       content: "";
       position: absolute;
       inset: 12%;
-      border: 2px solid rgba(255,255,255,0.78);
-      border-radius: 24px;
-      box-shadow: 0 0 0 999px rgba(0,0,0,0.12);
+      border: 2px solid rgba(255, 255, 255, 0.78);
+      border-radius: 22px;
+      box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.14);
       pointer-events: none;
     }
 
-    .status {
-      min-height: 24px;
+    .camera-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .drop-target {
+      display: grid;
+      place-items: center;
+      min-height: 104px;
+      padding: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,245,239,0.92));
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.45;
+      border-style: dashed;
+    }
+
+    .drop-target.drag-over {
+      border-color: rgba(196, 92, 47, 0.55);
+      background: rgba(255, 247, 240, 0.98);
+      color: var(--accent-dark);
+    }
+
+    .drop-meta {
+      font-size: 0.85rem;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .result-box {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      gap: 10px;
+    }
+
+    .link-row {
+      min-height: 1.5em;
+      font-size: 0.92rem;
+    }
+
+    .link-row a {
+      color: var(--accent-dark);
+      font-weight: 700;
+      word-break: break-all;
+    }
+
+    .footer-note {
       margin: 0;
       color: var(--muted);
-      font-size: 0.95rem;
-    }
-
-    .status.error {
-      color: var(--danger);
-    }
-
-    .status.success {
-      color: var(--success);
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    footer {
-      margin-top: 18px;
-      color: var(--muted);
-      font-size: 0.9rem;
+      font-size: 0.82rem;
       text-align: center;
     }
 
+    .drop-overlay {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(23, 31, 40, 0.38);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+      z-index: 20;
+    }
+
+    .drop-overlay-card {
+      padding: 20px 24px;
+      border-radius: 24px;
+      background: rgba(255, 252, 246, 0.96);
+      border: 1px solid rgba(31, 41, 51, 0.12);
+      box-shadow: var(--shadow);
+      text-align: center;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     @media (max-width: 860px) {
-      .grid {
+      .app {
+        width: calc(100vw - 16px);
+        height: calc(100dvh - 16px);
+        margin: 8px auto;
+        padding: 12px;
+        border-radius: 24px;
+        gap: 10px;
+      }
+
+      .brand-row {
+        align-items: start;
+      }
+
+      .mini-note {
+        font-size: 0.78rem;
+      }
+
+      .send-layout,
+      .scan-layout {
         grid-template-columns: 1fr;
       }
 
-      .shell {
-        width: min(100% - 20px, 720px);
-        padding-top: 20px;
+      .send-layout .stack:last-child,
+      .scan-layout .stack:first-child {
+        min-height: 0;
       }
 
-      .card {
-        padding: 18px;
+      .composer {
+        grid-template-rows: auto auto minmax(126px, 1fr) auto auto;
       }
 
-      textarea {
-        min-height: 180px;
+      .reader {
+        grid-template-rows: auto auto auto minmax(110px, 1fr) auto auto;
       }
 
-      .qr-stage {
-        min-height: 320px;
+      .camera-block {
+        grid-auto-rows: min-content;
+      }
+
+      .video-shell {
+        aspect-ratio: 16 / 8.6;
+      }
+
+      #qrcode canvas,
+      #qrcode img {
+        width: min(100%, 248px) !important;
+      }
+
+      .footer-note {
+        font-size: 0.76rem;
       }
     }
   </style>
 </head>
 <body>
-  <main class="shell">
-    <section class="hero">
-      <span class="eyebrow">Dropcode</span>
-      <h1>Text AirDrop, no app required.</h1>
-      <p>Type or paste text, flash it as a QR code, and let another phone read it instantly with the default camera. On the flip side, Dropcode can also scan QR text straight from your device camera with no backend, no accounts, and no tracking.</p>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand-row">
+        <div class="brand">
+          <span class="brand-badge">D</span>
+          <span>Dropcode</span>
+        </div>
+        <div class="mini-note">No backend. No tracking. GitHub Pages ready.</div>
+      </div>
+      <h1>テキストを QR で送る。QR を読んで受け取る。</h1>
+      <p class="lede">送信と読み取りをタブで切り替えるだけの、無駄を削った 1 画面ツールです。カメラでも画像ファイルでも QR を読めて、URL はリンクとして開けて、テキストはそのままコピーできます。</p>
+    </header>
+
+    <nav class="tabs" aria-label="Dropcode tabs">
+      <button class="tab-button" id="tabSend" type="button" aria-selected="true" aria-controls="panelSend">出力</button>
+      <button class="tab-button" id="tabScan" type="button" aria-selected="false" aria-controls="panelScan">読み取り</button>
+    </nav>
+
+    <section class="panel send-layout active" id="panelSend" aria-labelledby="tabSend">
+      <div class="stack">
+        <article class="card composer">
+          <h2 class="card-title"><span>共有するテキスト</span><span class="counter" id="inputCount">0 文字</span></h2>
+          <p class="card-copy">入力した内容をそのまま QR に変換します。URL もプレーンテキストもそのまま渡せます。</p>
+          <textarea id="textInput" placeholder="メモ、URL、コード、Wi-Fi パスワードなどを貼り付けてください。">Hello from Dropcode.</textarea>
+          <div class="actions">
+            <button id="copySendBtn" class="secondary" type="button">テキストをコピー</button>
+            <button id="clearBtn" class="secondary" type="button">クリア</button>
+          </div>
+          <p class="status" id="copyStatus">端末の標準 QR リーダーでそのまま読めます。</p>
+        </article>
+      </div>
+
+      <div class="stack">
+        <article class="card" style="grid-template-rows:auto auto minmax(0,1fr) auto auto;">
+          <h2 class="card-title">QR プレビュー</h2>
+          <p class="card-copy">スマホでも読み取りやすい大きさで表示します。PNG 保存もできます。</p>
+          <div class="qr-stage">
+            <div id="qrcode" aria-live="polite"></div>
+          </div>
+          <div class="actions">
+            <button id="downloadBtn" class="primary" type="button">QR を PNG 保存</button>
+          </div>
+          <p class="status" id="qrHint">テキストを入力すると QR がここに表示されます。</p>
+        </article>
+      </div>
     </section>
 
-    <section class="grid">
-      <article class="card">
-        <h2>Send Text</h2>
-        <p>Anything you enter below is encoded directly into the QR code in real time, so another device can scan it and view the text immediately.</p>
-        <label for="textInput">
-          <span>Text to share</span>
-          <span class="counter" id="inputCount">0 characters</span>
-        </label>
-        <textarea id="textInput" placeholder="Paste a note, URL, Wi-Fi password, code snippet, or any text you want to send.">Hello from Dropcode.</textarea>
-        <div class="actions">
-          <button id="downloadBtn" class="primary" type="button">Download QR as PNG</button>
-          <button id="clearBtn" class="secondary" type="button">Clear text</button>
-        </div>
-        <p class="hint">Static only: works on GitHub Pages, stores nothing, and uses your browser plus two CDN scripts.</p>
-      </article>
-
-      <article class="card">
-        <h2>Live QR</h2>
-        <p>The QR code stays large for comfortable mobile scanning. Empty input shows a friendly prompt instead of a blank panel.</p>
-        <div class="qr-stage">
-          <div id="qrcode" aria-live="polite"></div>
-        </div>
-        <p class="hint" id="qrHint">Scan this with a phone camera and the text will appear directly in the system QR preview.</p>
-      </article>
-
-      <article class="card">
-        <h2>Scan QR</h2>
-        <p>Use your camera to decode QR text here. On phones, Dropcode asks for the rear camera when possible and stops scanning automatically after a successful read.</p>
-        <div class="scanner-wrap" id="scannerWrap">
+    <section class="panel scan-layout" id="panelScan" aria-labelledby="tabScan">
+      <div class="stack">
+        <article class="card camera-block">
+          <h2 class="card-title">カメラで読み取る</h2>
+          <p class="card-copy">スマホでは背面カメラを優先し、読み取りに成功したら自動で停止します。</p>
           <div class="video-shell" id="videoShell">
             <video id="scannerVideo" playsinline muted></video>
           </div>
-          <div class="actions">
-            <button id="startScanBtn" class="primary" type="button">Start camera scan</button>
-            <button id="stopScanBtn" class="secondary" type="button" disabled>Stop scan</button>
+          <div class="camera-actions" id="cameraActions">
+            <button id="startScanBtn" class="primary" type="button">カメラ開始</button>
+            <button id="stopScanBtn" class="secondary" type="button" disabled>停止</button>
           </div>
-        </div>
-        <p class="status" id="scanStatus">Camera idle.</p>
-        <label for="scanResult">
-          <span>Scanned text</span>
-          <span class="counter" id="scanCount">0 characters</span>
-        </label>
-        <textarea id="scanResult" placeholder="Decoded text will appear here." spellcheck="false"></textarea>
-      </article>
+          <p class="status" id="scanStatus">カメラは待機中です。</p>
+        </article>
 
-      <article class="card">
-        <h2>Privacy</h2>
-        <p>Dropcode is a tiny front-end-only utility. It does not upload text, write cookies, use analytics, or depend on any server logic.</p>
-        <p class="hint">If the browser blocks camera access or your device has no available camera, the scan controls hide and a clear message explains why.</p>
-      </article>
+        <article class="card">
+          <h2 class="card-title">画像から読み取る</h2>
+          <div class="drop-target" id="dropTarget">
+            <div>
+              <div>QR 画像をドラッグ&ドロップ</div>
+              <div class="drop-meta">または画像ファイルを選択して読み取り</div>
+            </div>
+          </div>
+          <div class="actions">
+            <label class="file-pick" for="imageInput">画像ファイルを選ぶ</label>
+            <input class="file-input" id="imageInput" type="file" accept="image/*">
+          </div>
+        </article>
+      </div>
+
+      <div class="stack">
+        <article class="card result-box">
+          <h2 class="card-title"><span>読み取り結果</span><span class="counter" id="scanCount">0 文字</span></h2>
+          <p class="card-copy">URL の場合は下にリンクを表示します。内容はワンクリックでコピーできます。</p>
+          <textarea id="scanResult" placeholder="QR の内容がここに表示されます。" spellcheck="false"></textarea>
+          <div class="actions">
+            <button id="copyScanBtn" class="primary" type="button">結果をコピー</button>
+            <button id="clearScanBtn" class="secondary" type="button">結果をクリア</button>
+          </div>
+          <div class="link-row" id="resultLink"></div>
+        </article>
+      </div>
     </section>
 
-    <footer>No backend. No tracking. Just text in and text out.</footer>
+    <p class="footer-note">ブラウザだけで動作します。カメラが使えない場合は画像ファイルやドラッグ&ドロップでも QR を読めます。</p>
   </main>
 
-  <canvas id="scanCanvas" class="hidden"></canvas>
+  <div class="drop-overlay" id="dropOverlay" aria-hidden="true">
+    <div class="drop-overlay-card">画像をドロップすると読み取りタブへ移動して解析します</div>
+  </div>
+
+  <canvas id="scanCanvas" class="sr-only"></canvas>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script>
+    const tabSend = document.getElementById('tabSend');
+    const tabScan = document.getElementById('tabScan');
+    const panelSend = document.getElementById('panelSend');
+    const panelScan = document.getElementById('panelScan');
+
     const textInput = document.getElementById('textInput');
     const inputCount = document.getElementById('inputCount');
     const qrcodeContainer = document.getElementById('qrcode');
     const qrHint = document.getElementById('qrHint');
     const downloadBtn = document.getElementById('downloadBtn');
     const clearBtn = document.getElementById('clearBtn');
+    const copySendBtn = document.getElementById('copySendBtn');
+    const copyStatus = document.getElementById('copyStatus');
 
     const startScanBtn = document.getElementById('startScanBtn');
     const stopScanBtn = document.getElementById('stopScanBtn');
-    const scannerWrap = document.getElementById('scannerWrap');
-    const videoShell = document.getElementById('videoShell');
     const scannerVideo = document.getElementById('scannerVideo');
+    const videoShell = document.getElementById('videoShell');
+    const cameraActions = document.getElementById('cameraActions');
     const scanCanvas = document.getElementById('scanCanvas');
     const scanResult = document.getElementById('scanResult');
     const scanStatus = document.getElementById('scanStatus');
     const scanCount = document.getElementById('scanCount');
+    const resultLink = document.getElementById('resultLink');
+    const copyScanBtn = document.getElementById('copyScanBtn');
+    const clearScanBtn = document.getElementById('clearScanBtn');
+    const dropTarget = document.getElementById('dropTarget');
+    const imageInput = document.getElementById('imageInput');
+    const dropOverlay = document.getElementById('dropOverlay');
 
-    let qrCode;
     let scanAnimationFrame = null;
     let scanStream = null;
     let scannerActive = false;
+    let dragDepth = 0;
+
+    function switchTab(tab) {
+      const sendActive = tab === 'send';
+      tabSend.setAttribute('aria-selected', sendActive ? 'true' : 'false');
+      tabScan.setAttribute('aria-selected', sendActive ? 'false' : 'true');
+      panelSend.classList.toggle('active', sendActive);
+      panelScan.classList.toggle('active', !sendActive);
+    }
 
     function updateCounter(element, value) {
       const size = value.length;
-      element.textContent = `${size} character${size === 1 ? '' : 's'}`;
+      element.textContent = `${size} 文字`;
     }
 
-    function renderEmptyState() {
-      qrcodeContainer.innerHTML = '<p style="margin:0; text-align:center; color:#5b6570; max-width:280px; line-height:1.6;">Enter some text to generate a QR code that another device can scan instantly.</p>';
+    function renderEmptyQr() {
+      qrcodeContainer.innerHTML = '<p class="empty-state">テキストを入力すると、ここにスキャンしやすい QR コードを表示します。</p>';
       downloadBtn.disabled = true;
-      qrHint.textContent = 'Enter text to generate a scannable QR code.';
+      qrHint.textContent = 'テキストを入力すると QR を生成します。';
     }
 
     function renderQr(value) {
       updateCounter(inputCount, value);
 
       if (!value.trim()) {
-        renderEmptyState();
+        renderEmptyQr();
         return;
       }
 
       qrcodeContainer.innerHTML = '';
-      qrCode = new QRCode(qrcodeContainer, {
+      new QRCode(qrcodeContainer, {
         text: value,
         width: 512,
         height: 512,
@@ -410,7 +709,7 @@
       });
 
       downloadBtn.disabled = false;
-      qrHint.textContent = 'Scan this with a phone camera and the text will appear directly in the system QR preview.';
+      qrHint.textContent = '標準カメラで読むとテキストがそのまま表示されます。';
     }
 
     function getQrCanvas() {
@@ -440,17 +739,58 @@
       link.click();
     }
 
+    async function copyText(value, statusTarget, idleMessage, successMessage) {
+      if (!value) {
+        statusTarget.textContent = idleMessage;
+        statusTarget.className = 'status';
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(value);
+        statusTarget.textContent = successMessage;
+        statusTarget.className = 'status success';
+      } catch (error) {
+        statusTarget.textContent = 'この環境ではクリップボードへのコピーに失敗しました。';
+        statusTarget.className = 'status error';
+      }
+    }
+
+    function isLikelyUrl(value) {
+      if (!value) return false;
+      try {
+        const url = new URL(value.trim());
+        return url.protocol === 'http:' || url.protocol === 'https:';
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function updateResultLink(value) {
+      if (isLikelyUrl(value)) {
+        const safeUrl = value.trim();
+        resultLink.innerHTML = `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl} を開く</a>`;
+        return;
+      }
+
+      resultLink.textContent = '';
+    }
+
+    function updateScanText(value, statusMessage = '読み取りに成功しました。', kind = 'success') {
+      switchTab('scan');
+      scanResult.value = value;
+      updateCounter(scanCount, value);
+      updateResultLink(value);
+      scanStatus.textContent = statusMessage;
+      scanStatus.className = `status ${kind}`;
+    }
+
     function setScanStatus(message, kind = '') {
       scanStatus.textContent = message;
       scanStatus.className = `status${kind ? ` ${kind}` : ''}`;
     }
 
-    function updateScanText(value) {
-      scanResult.value = value;
-      updateCounter(scanCount, value);
-    }
-
-    function stopScanner(message = 'Scanner stopped.', kind = '') {
+    function stopScanner(message = '読み取りを停止しました。', kind = '') {
       scannerActive = false;
       stopScanBtn.disabled = true;
       startScanBtn.disabled = false;
@@ -471,8 +811,8 @@
 
     function hideScanner(message) {
       stopScanner('', '');
-      scannerWrap.classList.add('hidden');
       videoShell.classList.add('hidden');
+      cameraActions.classList.add('hidden');
       setScanStatus(message, 'error');
     }
 
@@ -490,8 +830,8 @@
       const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
 
       if (code && code.data) {
-        updateScanText(code.data);
-        stopScanner('QR detected. Camera stopped automatically.', 'success');
+        stopScanner('QR を検出したのでカメラを停止しました。', 'success');
+        updateScanText(code.data, 'カメラから QR を読み取りました。', 'success');
         return;
       }
 
@@ -500,12 +840,13 @@
 
     async function startScanner() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        hideScanner('This browser does not support camera scanning.');
+        hideScanner('このブラウザではカメラ読み取りに対応していません。');
         return;
       }
 
+      switchTab('scan');
       startScanBtn.disabled = true;
-      setScanStatus('Requesting camera access...');
+      setScanStatus('カメラへのアクセスを要求しています。');
 
       try {
         const constraints = {
@@ -522,28 +863,93 @@
         await scannerVideo.play();
         scannerActive = true;
         stopScanBtn.disabled = false;
-        setScanStatus('Camera live. Point it at a QR code.');
+        setScanStatus('カメラ起動中。QR に向けてください。');
         scanLoop();
       } catch (error) {
         const denied = error && (error.name === 'NotAllowedError' || error.name === 'SecurityError');
         const unavailable = error && (error.name === 'NotFoundError' || error.name === 'OverconstrainedError' || error.name === 'NotReadableError');
 
         if (denied) {
-          hideScanner('Camera permission was denied, so scanning is unavailable in this browser session.');
+          hideScanner('カメラ権限が拒否されたため、カメラ読み取りは使えません。');
           return;
         }
 
         if (unavailable) {
-          hideScanner('No usable camera is available on this device right now.');
+          hideScanner('利用できるカメラが見つかりませんでした。');
           return;
         }
 
-        hideScanner('The camera could not be started for QR scanning.');
+        hideScanner('カメラを開始できませんでした。');
       }
     }
 
+    function decodeImageSource(image) {
+      const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
+      scanCanvas.width = image.naturalWidth || image.videoWidth || image.width;
+      scanCanvas.height = image.naturalHeight || image.videoHeight || image.height;
+      ctx.drawImage(image, 0, 0, scanCanvas.width, scanCanvas.height);
+      const imageData = ctx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+      return jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+    }
+
+    function loadImageFromFile(file) {
+      return new Promise((resolve, reject) => {
+        if (!file || !file.type.startsWith('image/')) {
+          reject(new Error('画像ファイルではありません。'));
+          return;
+        }
+
+        const image = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        image.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(image);
+        };
+        image.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error('画像を読み込めませんでした。'));
+        };
+        image.src = objectUrl;
+      });
+    }
+
+    async function decodeFile(file) {
+      switchTab('scan');
+      setScanStatus('画像から QR を解析しています。');
+
+      try {
+        const image = await loadImageFromFile(file);
+        const code = decodeImageSource(image);
+        if (code && code.data) {
+          stopScanner('');
+          updateScanText(code.data, '画像ファイルから QR を読み取りました。', 'success');
+          return;
+        }
+
+        setScanStatus('画像内に QR コードを見つけられませんでした。', 'error');
+      } catch (error) {
+        setScanStatus(error.message || '画像の読み取りに失敗しました。', 'error');
+      }
+    }
+
+    function showDropUi(active) {
+      document.body.classList.toggle('drop-active', active);
+      dropTarget.classList.toggle('drag-over', active);
+    }
+
+    function handleDroppedFiles(files) {
+      const [file] = Array.from(files || []);
+      if (!file) return;
+      decodeFile(file);
+    }
+
+    tabSend.addEventListener('click', () => switchTab('send'));
+    tabScan.addEventListener('click', () => switchTab('scan'));
+
     textInput.addEventListener('input', (event) => {
       renderQr(event.target.value);
+      copyStatus.textContent = '端末の標準 QR リーダーでそのまま読めます。';
+      copyStatus.className = 'status';
     });
 
     clearBtn.addEventListener('click', () => {
@@ -553,13 +959,61 @@
     });
 
     downloadBtn.addEventListener('click', downloadQr);
+    copySendBtn.addEventListener('click', () => copyText(textInput.value, copyStatus, 'コピーするテキストがありません。', '入力テキストをクリップボードにコピーしました。'));
+
     startScanBtn.addEventListener('click', startScanner);
-    stopScanBtn.addEventListener('click', () => stopScanner('Scanner stopped.'));
+    stopScanBtn.addEventListener('click', () => stopScanner('読み取りを停止しました。'));
+    copyScanBtn.addEventListener('click', () => copyText(scanResult.value, scanStatus, 'コピーする結果がありません。', '読み取り結果をクリップボードにコピーしました。'));
+
+    clearScanBtn.addEventListener('click', () => {
+      scanResult.value = '';
+      updateCounter(scanCount, '');
+      updateResultLink('');
+      setScanStatus('読み取り結果をクリアしました。');
+    });
+
+    imageInput.addEventListener('change', (event) => {
+      const [file] = event.target.files;
+      if (file) decodeFile(file);
+      imageInput.value = '';
+    });
+
+    ['dragenter', 'dragover'].forEach((eventName) => {
+      window.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dragDepth += 1;
+        showDropUi(true);
+      });
+    });
+
+    ['dragleave', 'dragend'].forEach((eventName) => {
+      window.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (dragDepth === 0) showDropUi(false);
+      });
+    });
+
+    window.addEventListener('drop', (event) => {
+      event.preventDefault();
+      dragDepth = 0;
+      showDropUi(false);
+      handleDroppedFiles(event.dataTransfer.files);
+    });
+
+    dropTarget.addEventListener('dragover', (event) => event.preventDefault());
+    dropTarget.addEventListener('drop', (event) => {
+      event.preventDefault();
+      dragDepth = 0;
+      showDropUi(false);
+      handleDroppedFiles(event.dataTransfer.files);
+    });
 
     window.addEventListener('beforeunload', () => stopScanner(''));
 
-    updateCounter(scanCount, scanResult.value);
+    updateCounter(scanCount, '');
     renderQr(textInput.value);
+    updateResultLink('');
   </script>
 </body>
 </html>
