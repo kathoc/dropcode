@@ -255,7 +255,7 @@
 
     #qrcode canvas,
     #qrcode img {
-      width: min(100%, clamp(240px, 34vw, 420px)) !important;
+      width: auto !important;
       height: auto !important;
       aspect-ratio: 1 / 1;
       padding: 12px;
@@ -488,7 +488,7 @@
 
       #qrcode canvas,
       #qrcode img {
-        width: min(100%, 260px) !important;
+        max-width: none;
       }
 
       .tabs {
@@ -521,7 +521,7 @@
 
       #panelSend {
         grid-template-columns: 1fr;
-        grid-template-rows: minmax(0, 0.82fr) minmax(0, 1.18fr);
+        grid-template-rows: minmax(0, 0.78fr) minmax(0, 1.22fr);
       }
 
       #panelSend .composer {
@@ -703,6 +703,18 @@
       qrHint.textContent = 'テキストを入力すると QR を生成します。';
     }
 
+    function fitQrElement() {
+      const qrElement = qrcodeContainer.querySelector('img') || qrcodeContainer.querySelector('canvas');
+      if (!qrElement) return;
+
+      const frame = qrcodeContainer.closest('.qr-stage');
+      if (!frame) return;
+
+      const available = Math.max(140, Math.min(frame.clientWidth, frame.clientHeight) - 28);
+      qrElement.style.setProperty('width', `${available}px`, 'important');
+      qrElement.style.setProperty('height', `${available}px`, 'important');
+    }
+
     function renderQr(value) {
       updateCounter(inputCount, value);
 
@@ -723,6 +735,7 @@
 
       downloadBtn.disabled = false;
       qrHint.textContent = '標準カメラで読むとテキストがそのまま表示されます。';
+      requestAnimationFrame(fitQrElement);
     }
 
     function getQrCanvas() {
@@ -1028,6 +1041,7 @@
     });
 
     window.addEventListener('beforeunload', () => stopScanner(''));
+    window.addEventListener('resize', fitQrElement);
 
     updateCounter(scanCount, '');
     renderQr(textInput.value);
