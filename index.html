@@ -30,8 +30,8 @@
     html,
     body {
       margin: 0;
-      height: 100%;
-      overflow: hidden;
+      min-height: 100%;
+      overflow: auto;
       font-family: "Segoe UI", "Helvetica Neue", sans-serif;
       color: var(--text);
       background:
@@ -53,18 +53,18 @@
 
     .app {
       width: min(1080px, calc(100vw - (var(--screen-pad) * 2)));
-      height: calc(100dvh - (var(--screen-pad) * 2));
+      min-height: calc(100dvh - (var(--screen-pad) * 2));
       margin: var(--screen-pad) auto;
       padding: clamp(10px, 1.6vw, 20px);
       display: grid;
-      grid-template-rows: auto auto minmax(0, 1fr);
+      grid-template-rows: auto auto auto;
       gap: clamp(8px, 1.2vw, 14px);
       background: var(--surface);
       backdrop-filter: blur(18px);
       border: 1px solid var(--border);
       border-radius: 30px;
       box-shadow: var(--shadow);
-      overflow: hidden;
+      overflow: visible;
     }
 
     .topbar {
@@ -153,7 +153,7 @@
     .panel {
       display: none;
       min-height: 0;
-      height: 100%;
+      height: auto;
     }
 
     .panel.active {
@@ -162,21 +162,23 @@
 
     .send-layout {
       grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+      align-items: start;
       gap: clamp(10px, 1.2vw, 14px);
       min-height: 0;
     }
 
     .scan-layout {
       grid-template-columns: minmax(260px, 0.95fr) minmax(0, 1.05fr);
+      align-items: start;
       gap: clamp(10px, 1.2vw, 14px);
       min-height: 0;
     }
 
-    @media (max-width: 1180px) {
+    @media (max-width: 1180px), (max-height: 760px) {
       .send-layout,
       .scan-layout {
         grid-template-columns: 1fr;
-        grid-template-rows: repeat(2, minmax(0, 1fr));
+        grid-template-rows: auto auto;
       }
     }
 
@@ -227,7 +229,7 @@
     textarea {
       width: 100%;
       min-height: 0;
-      height: 100%;
+      height: auto;
       resize: none;
       border: 1px solid rgba(31, 41, 51, 0.12);
       border-radius: 16px;
@@ -247,7 +249,7 @@
     }
 
     .composer {
-      grid-template-rows: auto minmax(0, 1fr) auto auto;
+      grid-template-rows: auto minmax(120px, 1fr) auto auto;
     }
 
     .qr-stage {
@@ -334,6 +336,7 @@
       display: grid;
       gap: 8px;
       min-height: 0;
+      grid-template-rows: auto minmax(220px, auto) auto auto;
     }
 
     .video-shell {
@@ -386,8 +389,16 @@
     .result-box {
       min-height: 0;
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr) auto auto;
+      grid-template-rows: auto minmax(140px, 1fr) auto auto;
       gap: 6px;
+    }
+
+    #textInput {
+      min-height: 120px;
+    }
+
+    #scanResult {
+      min-height: 140px;
     }
 
     .link-row {
@@ -437,10 +448,10 @@
       border: 0;
     }
 
-    @media (max-width: 860px) {
+    @media (max-width: 860px), (max-height: 760px) {
       .app {
         width: calc(100vw - 16px);
-        height: calc(100dvh - 16px);
+        min-height: calc(100dvh - 16px);
         margin: 8px auto;
         padding: 6px;
         border-radius: 22px;
@@ -458,7 +469,7 @@
       .send-layout,
       .scan-layout {
         grid-template-columns: 1fr;
-        grid-template-rows: repeat(2, minmax(0, 1fr));
+        grid-template-rows: auto auto;
       }
 
       .send-layout,
@@ -468,7 +479,7 @@
       }
 
       .camera-block {
-        grid-template-rows: auto minmax(0, 1fr) auto auto;
+        grid-template-rows: auto minmax(180px, auto) auto auto;
       }
 
       .video-shell {
@@ -506,16 +517,16 @@
 
       #panelSend {
         grid-template-columns: 1fr;
-        grid-template-rows: minmax(0, 0.68fr) minmax(0, 1.32fr);
+        grid-template-rows: auto auto;
       }
 
       #panelSend .composer {
-        grid-template-rows: auto minmax(74px, 1fr) auto;
+        grid-template-rows: auto minmax(90px, auto) auto auto;
       }
 
       #panelScan {
         grid-template-columns: 1fr;
-        grid-template-rows: minmax(0, 0.98fr) minmax(0, 1.02fr);
+        grid-template-rows: auto auto;
       }
 
       #panelScan .stack:first-child,
