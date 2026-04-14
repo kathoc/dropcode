@@ -87,6 +87,22 @@
       letter-spacing: 0.02em;
     }
 
+    .brand-text {
+      display: grid;
+      gap: 1px;
+      line-height: 1.1;
+    }
+
+    .brand-name {
+      font-weight: 700;
+    }
+
+    .brand-sub {
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
     .brand-badge {
       display: inline-flex;
       align-items: center;
@@ -354,6 +370,7 @@
       flex-wrap: wrap;
       gap: 8px;
       align-items: center;
+      justify-content: space-between;
     }
 
     .drop-target {
@@ -366,6 +383,7 @@
       text-align: center;
       line-height: 1.15;
       border-style: dashed;
+      cursor: pointer;
     }
 
     .drop-target.drag-over {
@@ -524,6 +542,10 @@
       .brand {
         gap: 8px;
       }
+
+      .brand-sub {
+        font-size: 0.68rem;
+      }
     }
   </style>
 </head>
@@ -533,15 +555,18 @@
       <div class="brand-row">
         <div class="brand">
           <span class="brand-badge">D</span>
-          <span>Dropcode</span>
+          <span class="brand-text">
+            <span class="brand-name">Dropcode</span>
+            <span class="brand-sub">QRコードを送る、受け取る</span>
+          </span>
         </div>
         <div class="mini-note">Static only</div>
       </div>
     </header>
 
     <nav class="tabs" aria-label="Dropcode tabs">
-      <button class="tab-button" id="tabSend" type="button" aria-selected="true" aria-controls="panelSend">出力</button>
-      <button class="tab-button" id="tabScan" type="button" aria-selected="false" aria-controls="panelScan">読み取り</button>
+      <button class="tab-button" id="tabSend" type="button" aria-selected="true" aria-controls="panelSend">作成する</button>
+      <button class="tab-button" id="tabScan" type="button" aria-selected="false" aria-controls="panelScan">読み取る</button>
     </nav>
 
     <section class="panel send-layout active" id="panelSend" aria-labelledby="tabSend">
@@ -580,8 +605,8 @@
           </div>
           <div class="drop-target" id="dropTarget">
             <div>
-              <div>画像をドロップ</div>
-              <div class="drop-meta">または選択</div>
+              <div>画像をドロップまたは選択</div>
+              <div class="drop-meta">QR画像ファイルを読み取る</div>
             </div>
           </div>
           <div class="camera-actions" id="cameraActions">
@@ -983,6 +1008,10 @@
       imageInput.value = '';
     });
 
+    dropTarget.addEventListener('click', () => {
+      imageInput.click();
+    });
+
     ['dragenter', 'dragover'].forEach((eventName) => {
       window.addEventListener(eventName, (event) => {
         event.preventDefault();
@@ -1009,6 +1038,7 @@
     dropTarget.addEventListener('dragover', (event) => event.preventDefault());
     dropTarget.addEventListener('drop', (event) => {
       event.preventDefault();
+      event.stopPropagation();
       dragDepth = 0;
       showDropUi(false);
       handleDroppedFiles(event.dataTransfer.files);
