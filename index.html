@@ -55,7 +55,7 @@
       width: min(1080px, calc(100vw - (var(--screen-pad) * 2)));
       height: calc(100dvh - (var(--screen-pad) * 2));
       margin: var(--screen-pad) auto;
-      padding: clamp(14px, 2vw, 24px);
+      padding: clamp(10px, 1.6vw, 20px);
       display: grid;
       grid-template-rows: auto auto minmax(0, 1fr);
       gap: clamp(8px, 1.2vw, 14px);
@@ -170,6 +170,14 @@
       grid-template-columns: minmax(260px, 0.95fr) minmax(0, 1.05fr);
       gap: clamp(10px, 1.2vw, 14px);
       min-height: 0;
+    }
+
+    @media (max-width: 1180px) {
+      .send-layout,
+      .scan-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+      }
     }
 
     .stack {
@@ -328,8 +336,7 @@
       min-height: 0;
     }
 
-    .video-shell,
-    .drop-target {
+    .video-shell {
       position: relative;
       overflow: hidden;
       border-radius: 18px;
@@ -370,30 +377,6 @@
       flex-wrap: wrap;
       gap: 8px;
       align-items: center;
-      justify-content: space-between;
-    }
-
-    .drop-target {
-      display: grid;
-      place-items: center;
-      min-height: 52px;
-      padding: 8px 10px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,245,239,0.92));
-      color: var(--muted);
-      text-align: center;
-      line-height: 1.15;
-      border-style: dashed;
-      cursor: pointer;
-    }
-
-    .drop-target.drag-over {
-      border-color: rgba(196, 92, 47, 0.55);
-      background: rgba(255, 247, 240, 0.98);
-      color: var(--accent-dark);
-    }
-
-    .drop-meta {
-      font-size: 0.72rem;
     }
 
     .file-input {
@@ -459,7 +442,7 @@
         width: calc(100vw - 16px);
         height: calc(100dvh - 16px);
         margin: 8px auto;
-        padding: 8px;
+        padding: 6px;
         border-radius: 22px;
         gap: 6px;
       }
@@ -475,11 +458,12 @@
       .send-layout,
       .scan-layout {
         grid-template-columns: 1fr;
-        grid-template-rows: minmax(0, 1fr);
+        grid-template-rows: repeat(2, minmax(0, 1fr));
       }
 
       .send-layout,
-      .scan-layout .stack {
+      .scan-layout .stack,
+      .send-layout .stack {
         min-height: 0;
       }
 
@@ -546,6 +530,14 @@
       .brand-sub {
         font-size: 0.68rem;
       }
+
+      .card-title {
+        font-size: 0.9rem;
+      }
+
+      .counter {
+        font-size: 0.72rem;
+      }
     }
   </style>
 </head>
@@ -602,12 +594,6 @@
           <h2 class="card-title">カメラ</h2>
           <div class="video-shell" id="videoShell">
             <video id="scannerVideo" playsinline muted></video>
-          </div>
-          <div class="drop-target" id="dropTarget">
-            <div>
-              <div>画像をドロップまたは選択</div>
-              <div class="drop-meta">QR画像ファイルを読み取る</div>
-            </div>
           </div>
           <div class="camera-actions" id="cameraActions">
             <button id="startScanBtn" class="secondary sr-only" type="button">開始</button>
@@ -668,7 +654,6 @@
     const resultLink = document.getElementById('resultLink');
     const copyScanBtn = document.getElementById('copyScanBtn');
     const clearScanBtn = document.getElementById('clearScanBtn');
-    const dropTarget = document.getElementById('dropTarget');
     const imageInput = document.getElementById('imageInput');
     const dropOverlay = document.getElementById('dropOverlay');
 
@@ -700,6 +685,17 @@
       qrcodeContainer.innerHTML = '<p class="empty-state">テキストを入力すると、ここにスキャンしやすい QR コードを表示します。</p>';
       downloadBtn.disabled = true;
       qrHint.textContent = 'テキストを入力すると QR を生成します。';
+    }
+
+    function createPaddedCanvas(sourceCanvas, padding = 48) {
+      const padded = document.createElement('canvas');
+      padded.width = sourceCanvas.width + padding * 2;
+      padded.height = sourceCanvas.height + padding * 2;
+      const ctx = padded.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, padded.width, padded.height);
+      ctx.drawImage(sourceCanvas, padding, padding);
+      return padded;
     }
 
     function fitQrElement() {
@@ -755,8 +751,9 @@
     }
 
     function downloadQr() {
-      const canvas = getQrCanvas();
-      if (!canvas) return;
+      const baseCanvas = getQrCanvas();
+      if (!baseCanvas) return;
+      const canvas = createPaddedCanvas(baseCanvas, 64);
 
       const link = document.createElement('a');
       link.href = canvas.toDataURL('image/png');
@@ -913,13 +910,50 @@
       }
     }
 
-    function decodeImageSource(image) {
+    function runDecodePass(width, height, draw) {
       const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
-      scanCanvas.width = image.naturalWidth || image.videoWidth || image.width;
-      scanCanvas.height = image.naturalHeight || image.videoHeight || image.height;
-      ctx.drawImage(image, 0, 0, scanCanvas.width, scanCanvas.height);
-      const imageData = ctx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+      scanCanvas.width = width;
+      scanCanvas.height = height;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      draw(ctx, width, height);
+      const imageData = ctx.getImageData(0, 0, width, height);
       return jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+    }
+
+    function decodeImageSource(image) {
+      const sourceWidth = image.naturalWidth || image.videoWidth || image.width;
+      const sourceHeight = image.naturalHeight || image.videoHeight || image.height;
+      const attempts = [
+        () => runDecodePass(sourceWidth, sourceHeight, (ctx) => {
+          ctx.drawImage(image, 0, 0, sourceWidth, sourceHeight);
+        }),
+        () => runDecodePass(sourceWidth + 96, sourceHeight + 96, (ctx) => {
+          ctx.drawImage(image, 48, 48, sourceWidth, sourceHeight);
+        }),
+        () => runDecodePass(sourceWidth, sourceHeight, (ctx) => {
+          const insetX = Math.round(sourceWidth * 0.03);
+          const insetY = Math.round(sourceHeight * 0.03);
+          ctx.drawImage(
+            image,
+            insetX,
+            insetY,
+            sourceWidth - insetX * 2,
+            sourceHeight - insetY * 2,
+            0,
+            0,
+            sourceWidth,
+            sourceHeight
+          );
+        })
+      ];
+
+      for (const attempt of attempts) {
+        const code = attempt();
+        if (code && code.data) return code;
+      }
+
+      return null;
     }
 
     function loadImageFromFile(file) {
@@ -964,7 +998,6 @@
 
     function showDropUi(active) {
       document.body.classList.toggle('drop-active', active);
-      dropTarget.classList.toggle('drag-over', active);
     }
 
     function handleDroppedFiles(files) {
@@ -1008,10 +1041,6 @@
       imageInput.value = '';
     });
 
-    dropTarget.addEventListener('click', () => {
-      imageInput.click();
-    });
-
     ['dragenter', 'dragover'].forEach((eventName) => {
       window.addEventListener(eventName, (event) => {
         event.preventDefault();
@@ -1030,15 +1059,6 @@
 
     window.addEventListener('drop', (event) => {
       event.preventDefault();
-      dragDepth = 0;
-      showDropUi(false);
-      handleDroppedFiles(event.dataTransfer.files);
-    });
-
-    dropTarget.addEventListener('dragover', (event) => event.preventDefault());
-    dropTarget.addEventListener('drop', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
       dragDepth = 0;
       showDropUi(false);
       handleDroppedFiles(event.dataTransfer.files);
