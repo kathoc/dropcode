@@ -20,6 +20,7 @@
       --shadow: 0 18px 48px rgba(63, 41, 18, 0.12);
       --radius: 24px;
       --screen-pad: clamp(14px, 2vw, 24px);
+      --control-height: 44px;
     }
 
     * {
@@ -138,9 +139,13 @@
       border-radius: 999px;
       background: transparent;
       color: var(--muted);
-      padding: 10px 12px;
+      height: var(--control-height);
+      padding: 0 12px;
       font-weight: 700;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
     }
 
@@ -303,10 +308,14 @@
       appearance: none;
       border: 0;
       border-radius: 999px;
-      padding: 10px 14px;
+      height: var(--control-height);
+      padding: 0 14px;
       font-weight: 700;
       cursor: pointer;
       text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, background 0.18s ease;
     }
 
@@ -575,8 +584,8 @@
     <section class="panel send-layout active" id="panelSend" aria-labelledby="tabSend">
       <div class="stack">
         <article class="card composer">
-          <h2 class="card-title"><span>テキスト</span><span class="counter" id="inputCount">0 文字</span></h2>
-          <textarea id="textInput" placeholder="メモ、URL、コード、Wi-Fi パスワードなどを貼り付けてください。">Hello from Dropcode.</textarea>
+          <h2 class="card-title"><span>テキスト</span><span class="counter" id="inputCount">残り100%</span></h2>
+          <textarea id="textInput" maxlength="1200" placeholder="メモ、URL、コード、Wi-Fi パスワードなどを貼り付けてください。">Hello from Dropcode.</textarea>
           <div class="actions">
             <button id="copySendBtn" class="secondary" type="button">コピー</button>
             <button id="clearBtn" class="secondary" type="button">クリア</button>
@@ -643,6 +652,7 @@
     const tabScan = document.getElementById('tabScan');
     const panelSend = document.getElementById('panelSend');
     const panelScan = document.getElementById('panelScan');
+    const MAX_TEXT_LENGTH = Number(document.getElementById('textInput').maxLength) || 1200;
 
     const textInput = document.getElementById('textInput');
     const inputCount = document.getElementById('inputCount');
@@ -689,6 +699,13 @@
 
     function updateCounter(element, value) {
       const size = value.length;
+      if (element === inputCount) {
+        const remaining = Math.max(0, MAX_TEXT_LENGTH - size);
+        const remainingPercent = Math.round((remaining / MAX_TEXT_LENGTH) * 100);
+        element.textContent = `${size}/${MAX_TEXT_LENGTH} ・ 残り${remainingPercent}%`;
+        return;
+      }
+
       element.textContent = `${size} 文字`;
     }
 
