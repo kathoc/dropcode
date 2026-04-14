@@ -59,6 +59,7 @@
       padding: clamp(10px, 1.6vw, 20px);
       display: grid;
       grid-template-rows: auto auto auto;
+      align-content: start;
       gap: clamp(8px, 1.2vw, 14px);
       background: var(--surface);
       backdrop-filter: blur(18px);
@@ -129,6 +130,8 @@
       gap: 6px;
       background: rgba(31, 41, 51, 0.05);
       padding: 4px;
+      height: calc(var(--control-height) + 10px);
+      align-self: start;
       border-radius: 999px;
       border: 1px solid rgba(31, 41, 51, 0.07);
     }
@@ -362,7 +365,7 @@
     }
 
     .video-shell.hidden,
-    .camera-actions.hidden {
+    .camera-controls.hidden {
       display: none !important;
     }
 
@@ -387,6 +390,12 @@
     .camera-actions {
       display: flex;
       flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .camera-controls {
+      display: flex;
       gap: 8px;
       align-items: center;
     }
@@ -616,9 +625,11 @@
             <video id="scannerVideo" playsinline muted></video>
           </div>
           <div class="camera-actions" id="cameraActions">
-            <button id="startScanBtn" class="secondary sr-only" type="button">開始</button>
             <label class="file-pick" for="imageInput">画像を選ぶ</label>
-            <button id="stopScanBtn" class="secondary" type="button" disabled>停止</button>
+            <div class="camera-controls" id="cameraControls">
+              <button id="startScanBtn" class="secondary sr-only" type="button">開始</button>
+              <button id="stopScanBtn" class="secondary" type="button" disabled>停止</button>
+            </div>
           </div>
           <p class="status sr-only" id="scanStatus">カメラは待機中です。</p>
           <input class="file-input" id="imageInput" type="file" accept="image/*">
@@ -668,6 +679,7 @@
     const scannerVideo = document.getElementById('scannerVideo');
     const videoShell = document.getElementById('videoShell');
     const cameraActions = document.getElementById('cameraActions');
+    const cameraControls = document.getElementById('cameraControls');
     const scanCanvas = document.getElementById('scanCanvas');
     const scanResult = document.getElementById('scanResult');
     const scanStatus = document.getElementById('scanStatus');
@@ -862,7 +874,7 @@
     function hideScanner(message) {
       stopScanner('', '');
       videoShell.classList.add('hidden');
-      cameraActions.classList.add('hidden');
+      cameraControls.classList.add('hidden');
       setScanStatus(message, 'error');
     }
 
@@ -899,7 +911,7 @@
       }
 
       videoShell.classList.remove('hidden');
-      cameraActions.classList.remove('hidden');
+      cameraControls.classList.remove('hidden');
       startScanBtn.disabled = true;
       setScanStatus(fromTabSwitch ? 'カメラ起動中。' : 'カメラへのアクセスを要求しています。');
 
