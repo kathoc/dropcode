@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 80" fill="none">
+  <g transform="translate(8, 8)">
+    <rect x="0" y="0" width="64" height="64" rx="10" fill="#c45c2f"/>
+    <rect x="8" y="8" width="48" height="48" rx="6" fill="#fffdfa"/>
+    <rect x="16" y="16" width="32" height="32" rx="4" fill="#c45c2f"/>
+    <circle cx="64" cy="32" r="20" fill="#fffdfa"/>
+    <circle cx="64" cy="32" r="10" fill="#c45c2f"/>
+  </g>
+  <text x="92" y="56" font-family="'Segoe UI', 'Helvetica Neue', sans-serif" font-size="42" font-weight="700" fill="#1f2933" letter-spacing="-1">
+    <tspan fill="#c45c2f">drop</tspan><tspan fill="#1f2933">code</tspan>
+  </text>
+</svg>

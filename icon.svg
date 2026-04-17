@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f7f2e9"/>
+      <stop offset="100%" stop-color="#efe6d4"/>
+    </linearGradient>
+    <mask id="d-mask">
+      <rect width="512" height="512" fill="white"/>
+      <circle cx="512" cy="256" r="120" fill="black"/>
+    </mask>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <g mask="url(#d-mask)">
+    <rect x="56" y="56" width="400" height="400" rx="56" fill="#c45c2f"/>
+  </g>
+  <g mask="url(#d-mask)">
+    <rect x="104" y="104" width="304" height="304" rx="40" fill="#fffdfa"/>
+  </g>
+  <g mask="url(#d-mask)">
+    <rect x="156" y="156" width="200" height="200" rx="28" fill="#c45c2f"/>
+  </g>
+  <circle cx="456" cy="256" r="68" fill="#c45c2f"/>
+  <rect x="56" y="432" width="24" height="24" rx="4" fill="#c45c2f" opacity="0.3"/>
+  <rect x="432" y="56" width="24" height="24" rx="4" fill="#c45c2f" opacity="0.3"/>
+  <rect x="96" y="432" width="24" height="24" rx="4" fill="#c45c2f" opacity="0.15"/>
+</svg>

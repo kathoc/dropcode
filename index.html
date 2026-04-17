@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Dropcode</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
   <meta name="description" content="Dropcode はテキストを QR コード化し、カメラや画像ファイルから QR テキストを読み取れる静的な単一ページアプリです。">
   <style>
     :root {
@@ -575,7 +576,7 @@
     <header class="topbar">
       <div class="brand-row">
         <div class="brand">
-          <span class="brand-badge">D</span>
+          <span class="brand-badge"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22"><rect width="64" height="64" rx="10" fill="#fff" fill-opacity=".3"/><rect x="8" y="8" width="48" height="48" rx="6" fill="#fff" fill-opacity=".5"/><rect x="16" y="16" width="32" height="32" rx="4" fill="#fff"/><circle cx="64" cy="32" r="18" fill="#fff" fill-opacity=".5"/><circle cx="64" cy="32" r="9" fill="#fff"/></svg></span>
           <span class="brand-text">
             <span class="brand-name">Dropcode</span>
             <span class="brand-sub">QRコードを送る、受け取る</span>
@@ -950,7 +951,7 @@
       }
     }
 
-    function runDecodePass(width, height, draw) {
+    function runDecodePass(width, height, draw, binarize) {
       const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
       scanCanvas.width = width;
       scanCanvas.height = height;
@@ -958,34 +959,37 @@
       ctx.fillRect(0, 0, width, height);
       draw(ctx, width, height);
       const imageData = ctx.getImageData(0, 0, width, height);
+      if (binarize) {
+        const d = imageData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const v = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000;
+          const bw = v < binarize ? 0 : 255;
+          d[i] = bw; d[i + 1] = bw; d[i + 2] = bw;
+        }
+      }
       return jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
     }
 
     function decodeImageSource(image) {
       const sourceWidth = image.naturalWidth || image.videoWidth || image.width;
       const sourceHeight = image.naturalHeight || image.videoHeight || image.height;
+      const padded = { w: sourceWidth + 96, h: sourceHeight + 96 };
+
+      const drawOriginal = (ctx) => ctx.drawImage(image, 0, 0, sourceWidth, sourceHeight);
+      const drawPadded = (ctx) => ctx.drawImage(image, 48, 48, sourceWidth, sourceHeight);
+      const drawCropped = (ctx) => {
+        const ix = Math.round(sourceWidth * 0.03);
+        const iy = Math.round(sourceHeight * 0.03);
+        ctx.drawImage(image, ix, iy, sourceWidth - ix * 2, sourceHeight - iy * 2, 0, 0, sourceWidth, sourceHeight);
+      };
+
       const attempts = [
-        () => runDecodePass(sourceWidth, sourceHeight, (ctx) => {
-          ctx.drawImage(image, 0, 0, sourceWidth, sourceHeight);
-        }),
-        () => runDecodePass(sourceWidth + 96, sourceHeight + 96, (ctx) => {
-          ctx.drawImage(image, 48, 48, sourceWidth, sourceHeight);
-        }),
-        () => runDecodePass(sourceWidth, sourceHeight, (ctx) => {
-          const insetX = Math.round(sourceWidth * 0.03);
-          const insetY = Math.round(sourceHeight * 0.03);
-          ctx.drawImage(
-            image,
-            insetX,
-            insetY,
-            sourceWidth - insetX * 2,
-            sourceHeight - insetY * 2,
-            0,
-            0,
-            sourceWidth,
-            sourceHeight
-          );
-        })
+        () => runDecodePass(sourceWidth, sourceHeight, drawOriginal),
+        () => runDecodePass(padded.w, padded.h, drawPadded),
+        () => runDecodePass(sourceWidth, sourceHeight, drawCropped),
+        () => runDecodePass(padded.w, padded.h, drawPadded, 20),
+        () => runDecodePass(padded.w, padded.h, drawPadded, 80),
+        () => runDecodePass(padded.w, padded.h, drawPadded, 160),
       ];
 
       for (const attempt of attempts) {
