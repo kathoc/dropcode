@@ -700,6 +700,16 @@
     let scannerActive = false;
     let dragDepth = 0;
 
+    let barcodeDetector = null;
+    if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+      try {
+        barcodeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
+      } catch (_) {
+        barcodeDetector = null;
+      }
+    }
+    let barcodeDetecting = false;
+
     function switchTab(tab) {
       const sendActive = tab === 'send';
       tabSend.setAttribute('aria-selected', sendActive ? 'true' : 'false');
@@ -885,21 +895,30 @@
 
     let scanFrameCounter = 0;
 
-    function scanLoop() {
-      if (!scannerActive || !scannerVideo.videoWidth || !scannerVideo.videoHeight) {
-        scanAnimationFrame = requestAnimationFrame(scanLoop);
-        return;
+    async function detectWithBarcodeDetector() {
+      if (!barcodeDetector || barcodeDetecting) return null;
+      barcodeDetecting = true;
+      try {
+        const results = await barcodeDetector.detect(scannerVideo);
+        if (results && results.length > 0 && results[0].rawValue) {
+          return { data: results[0].rawValue };
+        }
+      } catch (_) {
+        // ignore and fall back
+      } finally {
+        barcodeDetecting = false;
       }
+      return null;
+    }
 
-      const width = scannerVideo.videoWidth;
-      const height = scannerVideo.videoHeight;
+    function decodeWithJsQR(width, height) {
       const draw = (ctx) => ctx.drawImage(scannerVideo, 0, 0, width, height);
       const pad = Math.round(Math.min(width, height) * 0.08);
       const paddedW = width + pad * 2;
       const paddedH = height + pad * 2;
       const drawPadded = (ctx) => ctx.drawImage(scannerVideo, pad, pad, width, height);
 
-      const cropRatios = [0.6, 0.4];
+      const cropRatios = [0.7, 0.5, 0.35];
       const cropRatio = cropRatios[scanFrameCounter % cropRatios.length];
       const cropW = Math.round(width * cropRatio);
       const cropH = Math.round(height * cropRatio);
@@ -910,20 +929,32 @@
       const cropPadH = cropH + pad * 2;
       const drawCroppedPadded = (ctx) => ctx.drawImage(scannerVideo, cropX, cropY, cropW, cropH, pad, pad, cropW, cropH);
 
+      const downW = Math.max(320, Math.round(width / 2));
+      const downH = Math.max(180, Math.round(height / 2));
+      const drawDown = (ctx) => ctx.drawImage(scannerVideo, 0, 0, downW, downH);
+
       let code = runDecodePass(width, height, draw);
-      if (!(code && code.data)) {
-        code = runDecodePass(cropW, cropH, drawCropped);
-      }
-      if (!(code && code.data)) {
-        code = runDecodePass(cropPadW, cropPadH, drawCroppedPadded);
-      }
-      if (!(code && code.data)) {
-        code = runDecodePass(paddedW, paddedH, drawPadded);
-      }
+      if (!(code && code.data)) code = runDecodePass(cropW, cropH, drawCropped);
+      if (!(code && code.data)) code = runDecodePass(cropPadW, cropPadH, drawCroppedPadded);
+      if (!(code && code.data)) code = runDecodePass(downW, downH, drawDown);
+      if (!(code && code.data)) code = runDecodePass(paddedW, paddedH, drawPadded);
       if (!(code && code.data)) {
         const phase = scanFrameCounter % 3;
         const threshold = phase === 0 ? 80 : phase === 1 ? 128 : 160;
         code = runDecodePass(cropPadW, cropPadH, drawCroppedPadded, threshold);
+      }
+      return code;
+    }
+
+    async function scanLoop() {
+      if (!scannerActive || !scannerVideo.videoWidth || !scannerVideo.videoHeight) {
+        scanAnimationFrame = requestAnimationFrame(scanLoop);
+        return;
+      }
+
+      let code = await detectWithBarcodeDetector();
+      if (!(code && code.data)) {
+        code = decodeWithJsQR(scannerVideo.videoWidth, scannerVideo.videoHeight);
       }
       scanFrameCounter += 1;
 
@@ -933,7 +964,9 @@
         return;
       }
 
-      scanAnimationFrame = requestAnimationFrame(scanLoop);
+      if (scannerActive) {
+        scanAnimationFrame = requestAnimationFrame(scanLoop);
+      }
     }
 
     async function startScanner(fromTabSwitch = false) {
