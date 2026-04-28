@@ -174,14 +174,14 @@
 
     .send-layout {
       grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
-      align-items: start;
+      align-items: stretch;
       gap: clamp(10px, 1.2vw, 14px);
       min-height: 0;
     }
 
     .scan-layout {
       grid-template-columns: minmax(260px, 0.95fr) minmax(0, 1.05fr);
-      align-items: start;
+      align-items: stretch;
       gap: clamp(10px, 1.2vw, 14px);
       min-height: 0;
     }
@@ -589,7 +589,7 @@
             <span class="brand-sub">QRコードで送る、受け取る</span>
           </span>
         </div>
-        <div class="mini-note">Static only</div>
+        <div class="mini-note">サーバー不使用</div>
       </div>
     </header>
 
@@ -601,26 +601,26 @@
     <section class="panel send-layout active" id="panelSend" aria-labelledby="tabSend">
       <div class="stack">
         <article class="card composer">
-          <h2 class="card-title"><span>テキスト</span><span class="counter" id="inputCount">残り100%</span></h2>
-          <textarea id="textInput" maxlength="1200" placeholder="メモ、URL、コード、Wi-Fi パスワードなどを貼り付けてください。">Hello from Dropcode.</textarea>
+          <h2 class="card-title"><span>テキスト</span><span class="counter" id="inputCount">0 / 1200</span></h2>
+          <textarea id="textInput" maxlength="1200" placeholder="メモ、URL、コード、Wi-Fi パスワードなどを貼り付けてください。"></textarea>
           <div class="actions">
             <button id="copySendBtn" class="secondary" type="button">コピー</button>
             <button id="clearBtn" class="secondary" type="button">クリア</button>
           </div>
-          <p class="status sr-only" id="copyStatus">端末の標準 QR リーダーでそのまま読めます。</p>
+          <p class="status" id="copyStatus"></p>
         </article>
       </div>
 
       <div class="stack">
         <article class="card" style="grid-template-rows:auto minmax(0,1fr) auto;">
-          <h2 class="card-title">QR</h2>
+          <h2 class="card-title">QR コード</h2>
           <div class="qr-stage">
             <div id="qrcode" aria-live="polite"></div>
           </div>
           <div class="actions">
             <button id="downloadBtn" class="primary" type="button">PNG保存</button>
           </div>
-          <p class="status sr-only" id="qrHint">テキストを入力すると QR がここに表示されます。</p>
+          <p class="status" id="qrHint">テキストを入力すると QR がここに表示されます。</p>
         </article>
       </div>
     </section>
@@ -629,17 +629,17 @@
       <div class="stack">
         <article class="card camera-block">
           <h2 class="card-title">カメラ</h2>
-          <div class="video-shell" id="videoShell">
+          <div class="video-shell hidden" id="videoShell">
             <video id="scannerVideo" playsinline muted></video>
           </div>
           <div class="camera-actions" id="cameraActions">
             <label class="file-pick" for="imageInput">画像を選ぶ</label>
             <div class="camera-controls" id="cameraControls">
-              <button id="startScanBtn" class="secondary sr-only" type="button">開始</button>
+              <button id="startScanBtn" class="secondary" type="button">カメラ開始</button>
               <button id="stopScanBtn" class="secondary" type="button" disabled>停止</button>
             </div>
           </div>
-          <p class="status sr-only" id="scanStatus">カメラは待機中です。</p>
+          <p class="status" id="scanStatus">カメラは待機中です。</p>
           <input class="file-input" id="imageInput" type="file" accept="image/*">
         </article>
       </div>
@@ -659,7 +659,7 @@
   </main>
 
   <div class="drop-overlay" id="dropOverlay" aria-hidden="true">
-    <div class="drop-overlay-card">画像をドロップすると読み取りタブへ移動して解析します</div>
+    <div class="drop-overlay-card">画像をドロップして QR を読み取る</div>
   </div>
 
   <canvas id="scanCanvas" class="sr-only"></canvas>
@@ -739,25 +739,21 @@
 
       if (sendActive) {
         stopScanner('');
-      } else if (!scannerActive && !scanStream && !videoShell.classList.contains('hidden')) {
-        startScanner(true);
       }
     }
 
     function updateCounter(element, value) {
       const size = value.length;
       if (element === inputCount) {
-        const remaining = Math.max(0, MAX_TEXT_LENGTH - size);
-        const remainingPercent = Math.round((remaining / MAX_TEXT_LENGTH) * 100);
-        element.textContent = `${size}/${MAX_TEXT_LENGTH} ・ 残り${remainingPercent}%`;
+        element.textContent = `${size} / ${MAX_TEXT_LENGTH}`;
         return;
       }
 
-      element.textContent = `${size} 文字`;
+      element.textContent = size === 0 ? '' : `${size} 文字`;
     }
 
     function renderEmptyQr() {
-      qrcodeContainer.innerHTML = '<p class="empty-state">テキストを入力すると、ここにスキャンしやすい QR コードを表示します。</p>';
+      qrcodeContainer.innerHTML = '<p class="empty-state">テキストを入力すると QR が生成されます</p>';
       downloadBtn.disabled = true;
       qrHint.textContent = 'テキストを入力すると QR を生成します。';
     }
