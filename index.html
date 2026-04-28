@@ -663,6 +663,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js"></script>
   <script>
     const tabSend = document.getElementById('tabSend');
     const tabScan = document.getElementById('tabScan');
@@ -709,6 +710,22 @@
       }
     }
     let barcodeDetecting = false;
+
+    let zxingReader = null;
+    let zxingControls = null;
+    function getZxingReader() {
+      if (zxingReader) return zxingReader;
+      const ns = window.ZXingBrowser || window.ZXing;
+      if (!ns) return null;
+      const Reader = ns.BrowserQRCodeReader || ns.BrowserMultiFormatReader;
+      if (!Reader) return null;
+      try {
+        zxingReader = new Reader();
+      } catch (_) {
+        zxingReader = null;
+      }
+      return zxingReader;
+    }
 
     function switchTab(tab) {
       const sendActive = tab === 'send';
@@ -872,6 +889,8 @@
       stopScanBtn.disabled = true;
       startScanBtn.disabled = false;
 
+      stopZxingDecode();
+
       if (scanAnimationFrame) {
         cancelAnimationFrame(scanAnimationFrame);
         scanAnimationFrame = null;
@@ -894,6 +913,38 @@
     }
 
     let scanFrameCounter = 0;
+
+    function stopZxingDecode() {
+      if (zxingControls) {
+        try { zxingControls.stop(); } catch (_) {}
+        zxingControls = null;
+      }
+    }
+
+    async function startZxingDecode() {
+      const reader = getZxingReader();
+      if (!reader || !reader.decodeFromVideoElement) return;
+      stopZxingDecode();
+      try {
+        zxingControls = await reader.decodeFromVideoElement(scannerVideo, (result, error, controls) => {
+          if (!scannerActive) {
+            if (controls) try { controls.stop(); } catch (_) {}
+            return;
+          }
+          if (result && result.getText) {
+            const text = result.getText();
+            if (text) {
+              if (controls) try { controls.stop(); } catch (_) {}
+              zxingControls = null;
+              stopScanner('QR を検出したのでカメラを停止しました。', 'success');
+              updateScanText(text, 'カメラから QR を読み取りました。', 'success');
+            }
+          }
+        });
+      } catch (_) {
+        zxingControls = null;
+      }
+    }
 
     async function detectWithBarcodeDetector() {
       if (!barcodeDetector || barcodeDetecting) return null;
@@ -940,7 +991,15 @@
       if (!(code && code.data)) code = runDecodePass(cropW, cropH, drawCropped, 'otsu', true);
       if (!(code && code.data)) code = runDecodePass(width, height, draw, 'otsu');
       if (!(code && code.data)) code = runDecodePass(width, height, draw, null, true);
+      if (!(code && code.data)) code = runDecodePass(cropPadW, cropPadH, drawCroppedPadded, null, true);
+      if (!(code && code.data)) code = runDecodePass(cropPadW, cropPadH, drawCroppedPadded, 'otsu', true);
+      if (!(code && code.data)) {
+        const invertThresholds = [60, 100, 140, 180];
+        const t = invertThresholds[scanFrameCounter % invertThresholds.length];
+        code = runDecodePass(cropPadW, cropPadH, drawCroppedPadded, t, true);
+      }
       if (!(code && code.data)) code = runDecodePass(downW, downH, drawDown);
+      if (!(code && code.data)) code = runDecodePass(downW, downH, drawDown, 'otsu', true);
       if (!(code && code.data)) code = runDecodePass(paddedW, paddedH, drawPadded);
       if (!(code && code.data)) {
         const phase = scanFrameCounter % 3;
@@ -1007,6 +1066,7 @@
         scannerActive = true;
         stopScanBtn.disabled = false;
         setScanStatus('カメラ起動中。QR に向けてください。');
+        startZxingDecode();
         scanLoop();
       } catch (error) {
         const denied = error && (error.name === 'NotAllowedError' || error.name === 'SecurityError');
@@ -1060,7 +1120,7 @@
       const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
       scanCanvas.width = width;
       scanCanvas.height = height;
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = invert ? '#000000' : '#ffffff';
       ctx.fillRect(0, 0, width, height);
       draw(ctx, width, height);
       const imageData = ctx.getImageData(0, 0, width, height);
