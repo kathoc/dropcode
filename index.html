@@ -883,18 +883,25 @@
       setScanStatus(message, 'error');
     }
 
+    let scanFrameCounter = 0;
+
     function scanLoop() {
       if (!scannerActive || !scannerVideo.videoWidth || !scannerVideo.videoHeight) {
         scanAnimationFrame = requestAnimationFrame(scanLoop);
         return;
       }
 
-      const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
-      scanCanvas.width = scannerVideo.videoWidth;
-      scanCanvas.height = scannerVideo.videoHeight;
-      ctx.drawImage(scannerVideo, 0, 0, scanCanvas.width, scanCanvas.height);
-      const imageData = ctx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+      const width = scannerVideo.videoWidth;
+      const height = scannerVideo.videoHeight;
+      const draw = (ctx) => ctx.drawImage(scannerVideo, 0, 0, width, height);
+
+      let code = runDecodePass(width, height, draw);
+      if (!(code && code.data)) {
+        const phase = scanFrameCounter % 3;
+        const threshold = phase === 0 ? 80 : phase === 1 ? 128 : 160;
+        code = runDecodePass(width, height, draw, threshold);
+      }
+      scanFrameCounter += 1;
 
       if (code && code.data) {
         stopScanner('QR を検出したのでカメラを停止しました。', 'success');
