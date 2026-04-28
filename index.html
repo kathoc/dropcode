@@ -378,6 +378,10 @@
       background: #0f141b;
     }
 
+    video.mirrored {
+      transform: scaleX(-1);
+    }
+
     .video-shell::after {
       content: "";
       position: absolute;
@@ -928,6 +932,9 @@
 
         scanStream = await navigator.mediaDevices.getUserMedia(constraints);
         scannerVideo.srcObject = scanStream;
+        const track = scanStream.getVideoTracks()[0];
+        const facing = track && track.getSettings ? track.getSettings().facingMode : undefined;
+        scannerVideo.classList.toggle('mirrored', facing !== 'environment');
         await scannerVideo.play();
         scannerActive = true;
         stopScanBtn.disabled = false;
