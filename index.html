@@ -777,7 +777,7 @@
       const frame = qrcodeContainer.closest('.qr-stage');
       if (!frame) return;
 
-      const available = Math.max(140, Math.min(frame.clientWidth, frame.clientHeight) - 28);
+      const available = Math.max(140, Math.min(frame.clientWidth, frame.clientHeight, 320) - 28);
       qrElement.style.setProperty('width', `${available}px`, 'important');
       qrElement.style.setProperty('height', `${available}px`, 'important');
     }
