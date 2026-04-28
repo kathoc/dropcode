@@ -936,6 +936,10 @@
       let code = runDecodePass(width, height, draw);
       if (!(code && code.data)) code = runDecodePass(cropW, cropH, drawCropped);
       if (!(code && code.data)) code = runDecodePass(cropPadW, cropPadH, drawCroppedPadded);
+      if (!(code && code.data)) code = runDecodePass(cropW, cropH, drawCropped, 'otsu');
+      if (!(code && code.data)) code = runDecodePass(cropW, cropH, drawCropped, 'otsu', true);
+      if (!(code && code.data)) code = runDecodePass(width, height, draw, 'otsu');
+      if (!(code && code.data)) code = runDecodePass(width, height, draw, null, true);
       if (!(code && code.data)) code = runDecodePass(downW, downH, drawDown);
       if (!(code && code.data)) code = runDecodePass(paddedW, paddedH, drawPadded);
       if (!(code && code.data)) {
@@ -1022,7 +1026,37 @@
       }
     }
 
-    function runDecodePass(width, height, draw, binarize) {
+    function computeOtsuThreshold(data) {
+      const histogram = new Array(256).fill(0);
+      const totalPixels = data.length / 4;
+      for (let i = 0; i < data.length; i += 4) {
+        const v = (data[i] * 299 + data[i + 1] * 587 + data[i + 2] * 114) / 1000;
+        histogram[v | 0] += 1;
+      }
+      let sum = 0;
+      for (let t = 0; t < 256; t += 1) sum += t * histogram[t];
+      let sumB = 0;
+      let wB = 0;
+      let maxVar = -1;
+      let threshold = 128;
+      for (let t = 0; t < 256; t += 1) {
+        wB += histogram[t];
+        if (wB === 0) continue;
+        const wF = totalPixels - wB;
+        if (wF === 0) break;
+        sumB += t * histogram[t];
+        const mB = sumB / wB;
+        const mF = (sum - sumB) / wF;
+        const between = wB * wF * (mB - mF) * (mB - mF);
+        if (between > maxVar) {
+          maxVar = between;
+          threshold = t;
+        }
+      }
+      return threshold;
+    }
+
+    function runDecodePass(width, height, draw, binarize, invert) {
       const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
       scanCanvas.width = width;
       scanCanvas.height = height;
@@ -1030,15 +1064,23 @@
       ctx.fillRect(0, 0, width, height);
       draw(ctx, width, height);
       const imageData = ctx.getImageData(0, 0, width, height);
+      const d = imageData.data;
+      if (invert) {
+        for (let i = 0; i < d.length; i += 4) {
+          d[i] = 255 - d[i];
+          d[i + 1] = 255 - d[i + 1];
+          d[i + 2] = 255 - d[i + 2];
+        }
+      }
       if (binarize) {
-        const d = imageData.data;
+        const threshold = binarize === 'otsu' ? computeOtsuThreshold(d) : binarize;
         for (let i = 0; i < d.length; i += 4) {
           const v = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000;
-          const bw = v < binarize ? 0 : 255;
+          const bw = v < threshold ? 0 : 255;
           d[i] = bw; d[i + 1] = bw; d[i + 2] = bw;
         }
       }
-      return jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+      return jsQR(d, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
     }
 
     function decodeImageSource(image) {
