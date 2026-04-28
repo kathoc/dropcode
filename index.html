@@ -905,20 +905,17 @@
       const cropH = Math.round(height * cropRatio);
       const cropX = Math.round((width - cropW) / 2);
       const cropY = Math.round((height - cropH) / 2);
-      const targetSide = Math.max(cropW, cropH, 720);
-      const targetW = targetSide;
-      const targetH = targetSide;
-      const drawCropped = (ctx) => ctx.drawImage(scannerVideo, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
-      const targetPadW = targetW + pad * 2;
-      const targetPadH = targetH + pad * 2;
-      const drawCroppedPadded = (ctx) => ctx.drawImage(scannerVideo, cropX, cropY, cropW, cropH, pad, pad, targetW, targetH);
+      const drawCropped = (ctx) => ctx.drawImage(scannerVideo, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+      const cropPadW = cropW + pad * 2;
+      const cropPadH = cropH + pad * 2;
+      const drawCroppedPadded = (ctx) => ctx.drawImage(scannerVideo, cropX, cropY, cropW, cropH, pad, pad, cropW, cropH);
 
       let code = runDecodePass(width, height, draw);
       if (!(code && code.data)) {
-        code = runDecodePass(targetW, targetH, drawCropped);
+        code = runDecodePass(cropW, cropH, drawCropped);
       }
       if (!(code && code.data)) {
-        code = runDecodePass(targetPadW, targetPadH, drawCroppedPadded);
+        code = runDecodePass(cropPadW, cropPadH, drawCroppedPadded);
       }
       if (!(code && code.data)) {
         code = runDecodePass(paddedW, paddedH, drawPadded);
@@ -926,7 +923,7 @@
       if (!(code && code.data)) {
         const phase = scanFrameCounter % 3;
         const threshold = phase === 0 ? 80 : phase === 1 ? 128 : 160;
-        code = runDecodePass(targetPadW, targetPadH, drawCroppedPadded, threshold);
+        code = runDecodePass(cropPadW, cropPadH, drawCroppedPadded, threshold);
       }
       scanFrameCounter += 1;
 
