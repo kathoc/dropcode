@@ -894,12 +894,19 @@
       const width = scannerVideo.videoWidth;
       const height = scannerVideo.videoHeight;
       const draw = (ctx) => ctx.drawImage(scannerVideo, 0, 0, width, height);
+      const pad = Math.round(Math.min(width, height) * 0.08);
+      const paddedW = width + pad * 2;
+      const paddedH = height + pad * 2;
+      const drawPadded = (ctx) => ctx.drawImage(scannerVideo, pad, pad, width, height);
 
       let code = runDecodePass(width, height, draw);
       if (!(code && code.data)) {
+        code = runDecodePass(paddedW, paddedH, drawPadded);
+      }
+      if (!(code && code.data)) {
         const phase = scanFrameCounter % 3;
         const threshold = phase === 0 ? 80 : phase === 1 ? 128 : 160;
-        code = runDecodePass(width, height, draw, threshold);
+        code = runDecodePass(paddedW, paddedH, drawPadded, threshold);
       }
       scanFrameCounter += 1;
 
